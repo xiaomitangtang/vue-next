@@ -241,6 +241,7 @@ export function createAppAPI<HostElement>(
           vnode.appContext = context
 
           // HMR root reload
+          // 如果是开发环境，额外附加一个reload   把最初始的vnode进行挂载
           if (__DEV__) {
             context.reload = () => {
               render(cloneVNode(vnode), rootContainer)
@@ -253,10 +254,11 @@ export function createAppAPI<HostElement>(
             render(vnode, rootContainer)
           }
           isMounted = true
+          // app   rootContainer  互相保存引用
           app._container = rootContainer
           // for devtools and telemetry
           ;(rootContainer as any).__vue_app__ = app
-
+          // 根据 环境变量   决定是否初始化devtool
           if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
             devtoolsInitApp(app, version)
           }
@@ -273,6 +275,7 @@ export function createAppAPI<HostElement>(
       },
 
       unmount() {
+        // 之后客户端才会调用    服务端不会调用，，，所以没有进行判断
         if (isMounted) {
           render(null, app._container)
           if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {

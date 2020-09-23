@@ -25,6 +25,7 @@ export function popScopeId() {
 /**
  * @private
  */
+// 
 export function withScopeId(id: string): <T extends Function>(fn: T) => T {
   return ((fn: Function) =>
     withCtx(function(this: any) {

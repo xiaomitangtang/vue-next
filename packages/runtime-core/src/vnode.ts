@@ -302,6 +302,7 @@ export const createVNode = (__DEV__
   : _createVNode) as typeof _createVNode
 
 function _createVNode(
+  // mount 的时候传递的是  rootcom  rootprops
   type: VNodeTypes | ClassComponent | typeof NULL_DYNAMIC_COMPONENT,
   props: (Data & VNodeProps) | null = null,
   children: unknown = null,
@@ -313,9 +314,10 @@ function _createVNode(
     if (__DEV__ && !type) {
       warn(`Invalid vnode type when creating vnode: ${type}.`)
     }
+    // 如果没有传 第一个参数  就是一个注释。。。。
     type = Comment
   }
-
+  // __v_isVNode这个属性是 true  就是vnode
   if (isVNode(type)) {
     const cloned = cloneVNode(type, props)
     if (children) {
@@ -330,6 +332,7 @@ function _createVNode(
   }
 
   // class & style normalization.
+  // 如果有props  特殊处理 class  style
   if (props) {
     // for reactive or proxy objects, we need to clone it to enable mutation.
     if (isProxy(props) || InternalObjectKey in props) {
@@ -337,8 +340,12 @@ function _createVNode(
     }
     let { class: klass, style } = props
     if (klass && !isString(klass)) {
+      // 字符串  直接trim 返回
+      // 数组  拼接 返回
+      // 对象  拼接返回
       props.class = normalizeClass(klass)
     }
+    // 把  数组  嵌套对象  以及字符串  解析合并为一个对象
     if (isObject(style)) {
       // reactive state objects need to be cloned since they are likely to be
       // mutated
@@ -350,15 +357,15 @@ function _createVNode(
   }
 
   // encode the vnode type information into a bitmap
-  const shapeFlag = isString(type)
+  const shapeFlag = isString(type) // typeof val === 'string'
     ? ShapeFlags.ELEMENT
-    : __FEATURE_SUSPENSE__ && isSuspense(type)
+    : __FEATURE_SUSPENSE__ && isSuspense(type) // __isSuspense
       ? ShapeFlags.SUSPENSE
-      : isTeleport(type)
+      : isTeleport(type) // __isTeleport
         ? ShapeFlags.TELEPORT
-        : isObject(type)
+        : isObject(type) //  val !== null && typeof val === 'object'
           ? ShapeFlags.STATEFUL_COMPONENT
-          : isFunction(type)
+          : isFunction(type) //   typeof val === 'function'
             ? ShapeFlags.FUNCTIONAL_COMPONENT
             : 0
 
@@ -375,13 +382,13 @@ function _createVNode(
   }
 
   const vnode: VNode = {
-    __v_isVNode: true,
+    __v_isVNode: true, //判断是否是vnode的标记
     [ReactiveFlags.SKIP]: true,
     type,
     props,
     key: props && normalizeKey(props),
     ref: props && normalizeRef(props),
-    scopeId: currentScopeId,
+    scopeId: currentScopeId, //当前的scopeId
     children: null,
     component: null,
     suspense: null,
@@ -392,9 +399,9 @@ function _createVNode(
     target: null,
     targetAnchor: null,
     staticCount: 0,
-    shapeFlag,
-    patchFlag,
-    dynamicProps,
+    shapeFlag, // 虚拟dom的  类型 函数  组件 原生  文字  注释等等
+    patchFlag, //  默认是0
+    dynamicProps, // 默认是null
     dynamicChildren: null,
     appContext: null
   }
@@ -403,7 +410,8 @@ function _createVNode(
   if (__DEV__ && vnode.key !== vnode.key) {
     warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type)
   }
-
+  //  上面的 shapeFlag  只是简单标记，通过children  进一步确定 是哪些类型   采用二进制  1  11 111 1111  进行门运算
+  // 格式化children  更精细的计算类型
   normalizeChildren(vnode, children)
 
   if (
@@ -533,9 +541,11 @@ export function cloneIfMounted(child: VNode): VNode {
 }
 
 export function normalizeChildren(vnode: VNode, children: unknown) {
+  //计算vnode的 type 以及子节点children 处理
   let type = 0
   const { shapeFlag } = vnode
   if (children == null) {
+    // 新建的时候  children 是null
     children = null
   } else if (isArray(children)) {
     type = ShapeFlags.ARRAY_CHILDREN
