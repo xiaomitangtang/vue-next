@@ -45,11 +45,14 @@ let currentFlushPromise: Promise<void> | null = null
 
 let currentPreFlushParentJob: SchedulerJob | null = null
 
-const RECURSION_LIMIT = 100
+const RECURSION_LIMIT = 100 //  递归调用自己的最大次数   超出就认为是死循环
 type CountMap = Map<SchedulerJob | SchedulerCb, number>
 
 export function nextTick(fn?: () => void): Promise<void> {
   const p = currentFlushPromise || resolvedPromise
+  // 直接使用的promise  没有在兼容其他了
+  // 如果当前有任务队列  那么就拍在任务队列之后
+  // 所以文档说  可以直接 await
   return fn ? p.then(fn) : p
 }
 
@@ -60,7 +63,11 @@ export function queueJob(job: SchedulerJob) {
   // if the job is a watch() callback, the search will start with a +1 index to
   // allow it recursively trigger itself - it is the user's responsibility to
   // ensure it doesn't end up in an infinite loop.
+  // SchedulerJob
   if (
+    // 数组的  includes   第一个参数是搜索对象  第二个参数是搜索起始索引
+    // allowRecurse？  递归 递回  自己调用自己
+    //  component update functions and watch callbacks.  这几个是允许递归调用
     (!queue.length ||
       !queue.includes(
         job,
@@ -81,6 +88,7 @@ function queueFlush() {
 }
 
 export function invalidateJob(job: SchedulerJob) {
+  // 取消 job  就是置为null
   const i = queue.indexOf(job)
   if (i > -1) {
     queue[i] = null

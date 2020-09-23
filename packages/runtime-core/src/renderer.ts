@@ -433,9 +433,9 @@ function baseCreateRenderer(
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
   const patch: PatchFn = (
-    n1,
-    n2,
-    container,
+    n1, //  oldVnode
+    n2, // newVnode
+    container, //   render的时候  就只穿了前三个参数
     anchor = null,
     parentComponent = null,
     parentSuspense = null,
@@ -443,12 +443,14 @@ function baseCreateRenderer(
     optimized = false
   ) => {
     // patching & not same type, unmount old tree
+    // isSameVNodeType  就判断  type 和 key   所以一定要加key
     if (n1 && !isSameVNodeType(n1, n2)) {
+      // 如果不是同一个  卸载
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
-
+                      // -2  这个类型没有动态children
     if (n2.patchFlag === PatchFlags.BAIL) {
       optimized = false
       n2.dynamicChildren = null
@@ -541,12 +543,14 @@ function baseCreateRenderer(
 
   const processText: ProcessTextOrCommentFn = (n1, n2, container, anchor) => {
     if (n1 == null) {
+      // 如果没有旧节点   就插入
       hostInsert(
         (n2.el = hostCreateText(n2.children as string)),
         container,
         anchor
       )
     } else {
+      // 如果有 就更新
       const el = (n2.el = n1.el!)
       if (n2.children !== n1.children) {
         hostSetText(el, n2.children as string)
@@ -2207,7 +2211,7 @@ function baseCreateRenderer(
       // 如果都存在,   进行diff
       patch(container._vnode || null, vnode, container)
     }
-    // 对比完之后进行了任务调用...
+    // 对比完之后进行了任务调用...清空后置 回调？？？
     flushPostFlushCbs()
     // 更新 oldVnode
     container._vnode = vnode

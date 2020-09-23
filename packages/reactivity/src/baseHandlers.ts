@@ -85,7 +85,7 @@ function createGetter(isReadonly = false, shallow = false) {
     if (shallow) {
       return res
     }
-
+    // shaddlow  是否是浅度监听   a.b.c   a.b   是响应式的，，， 那么a.b.c 是否特是响应式的
     if (isRef(res)) {
       // ref unwrapping - does not apply for Array + integer key.
       const shouldUnwrap = !targetIsArray || !isIntegerKey(key)

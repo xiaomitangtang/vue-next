@@ -119,6 +119,7 @@ export function initProps(
 ) {
   const props: Data = {}
   const attrs: Data = {}
+  // 设置一个内部访问的属性  Obj.defind...
   def(attrs, InternalObjectKey, 1)
   setFullProps(instance, rawProps, props, attrs)
   // validation
@@ -128,6 +129,7 @@ export function initProps(
 
   if (isStateful) {
     // stateful
+    // 前面吧 props  取出之后，，对props 进行 shallowReactive
     instance.props = isSSR ? props : shallowReactive(props)
   } else {
     if (!instance.type.props) {
@@ -190,6 +192,7 @@ export function updateProps(
     }
   } else {
     // full props update.
+    // 对props  attrs  进行了修改
     setFullProps(instance, rawProps, props, attrs)
     // in case of dynamic props, check if we need to delete keys from
     // the props object
@@ -253,6 +256,7 @@ function setFullProps(
     for (const key in rawProps) {
       const value = rawProps[key]
       // key, ref are reserved and never passed down
+      // 是否是一些内部使用的特殊属性
       if (isReservedProp(key)) {
         continue
       }
@@ -271,9 +275,11 @@ function setFullProps(
   }
 
   if (needCastKeys) {
+
     const rawCurrentProps = toRaw(props)
     for (let i = 0; i < needCastKeys.length; i++) {
       const key = needCastKeys[i]
+      // 获取到 props的  值    根据default  获取
       props[key] = resolvePropValue(
         options!,
         rawCurrentProps,

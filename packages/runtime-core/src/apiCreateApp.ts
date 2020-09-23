@@ -230,6 +230,7 @@ export function createAppAPI<HostElement>(
       },
 
       mount(rootContainer: HostElement, isHydrate?: boolean): any {
+        // mount  多次调用   只有第一次生效
         if (!isMounted) {
           // 这俩参数就是外部传递进来的
           const vnode = createVNode(
