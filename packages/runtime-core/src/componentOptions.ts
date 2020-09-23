@@ -398,9 +398,10 @@ export function applyOptions(
     renderTriggered,
     errorCaptured
   } = options
-
+  //  publicThis  代理过的  ctx
   const publicThis = instance.proxy!
   const ctx = instance.ctx
+  // appContext   是 createApp 生成的，存在每一个vnode中 以及 createApp 闭包中 在mount的时候赋值给vnode
   const globalMixins = instance.appContext.mixins
 
   if (asMixin && render && instance.render === NOOP) {

@@ -491,6 +491,7 @@ export function setupComponent(
 
   const { props, children, shapeFlag } = instance.vnode
   const isStateful = shapeFlag & ShapeFlags.STATEFUL_COMPONENT
+  // 所以目前来说，，，按照3的用法  组件只有props  主要单独写
   initProps(instance, props, isStateful, isSSR)
   initSlots(instance, children)
 
@@ -537,13 +538,18 @@ function setupStatefulComponent(
   if (setup) {
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
-
+    // 如果setUp 有参数  并且2个参数，就生成上下文  否则不生成
+    // attrs: instance.attrs,
+    // slots: instance.slots,
+    // emit: instance.emit
     currentInstance = instance
+    // 暂停 依赖收集
     pauseTracking()
     const setupResult = callWithErrorHandling(
       setup,
       instance,
       ErrorCodes.SETUP_FUNCTION,
+      // 第四个参数是传递给setUp的  两个参数
       [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext]
     )
     resetTracking()
@@ -580,6 +586,8 @@ export function handleSetupResult(
 ) {
   if (isFunction(setupResult)) {
     // setup returned an inline render function
+    // setUp  返回函数 会直接作为render
+    // 不应该直接返回 vnode
     instance.render = setupResult as InternalRenderFunction
   } else if (isObject(setupResult)) {
     if (__DEV__ && isVNode(setupResult)) {
@@ -622,7 +630,7 @@ let compile: CompileFunction | undefined
 export function registerRuntimeCompiler(_compile: any) {
   compile = _compile
 }
-
+// 如果 是服务端渲染,setUp  返回函数会的render被component的render覆盖
 function finishComponentSetup(
   instance: ComponentInternalInstance,
   isSSR: boolean
