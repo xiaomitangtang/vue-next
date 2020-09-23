@@ -15,6 +15,7 @@ function compileToFunction(
   template: string | HTMLElement,
   options?: CompilerOptions
 ): RenderFunction {
+  // 如果是节点，取内部html
   if (!isString(template)) {
     if (template.nodeType) {
       template = template.innerHTML
@@ -29,7 +30,7 @@ function compileToFunction(
   if (cached) {
     return cached
   }
-
+  // 如果是字符串，尝试选择器获取
   if (template[0] === '#') {
     const el = document.querySelector(template)
     if (__DEV__ && !el) {
@@ -72,6 +73,7 @@ function compileToFunction(
   // with keys that cannot be mangled, and can be quite heavy size-wise.
   // In the global build we know `Vue` is available globally so we can avoid
   // the wildcard object.
+  // 最后还是生成一个render函数
   const render = (__GLOBAL__
     ? new Function(code)()
     : new Function('Vue', code)(runtimeDom)) as RenderFunction
@@ -81,7 +83,7 @@ function compileToFunction(
 
   return (compileCache[key] = render)
 }
-
+// 往runtime-core里面 保存  compiler
 registerRuntimeCompiler(compileToFunction)
 
 export { compileToFunction as compile }

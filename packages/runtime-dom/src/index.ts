@@ -29,6 +29,11 @@ let renderer: Renderer<Element> | HydrationRenderer
 
 let enabledHydration = false
 
+// {
+//   render,
+//   hydrate,
+//   createApp: createAppAPI(render, hydrate)
+// }
 function ensureRenderer() {
   return renderer || (renderer = createRenderer<Node, Element>(rendererOptions))
 }
@@ -50,7 +55,17 @@ export const hydrate = ((...args) => {
   ensureHydrationRenderer().hydrate(...args)
 }) as RootHydrateFunction
 
+console.log('-------------------createApp ')
 export const createApp = ((...args) => {
+  // 调用 ensureRenderer返回的 createApp
+  // ensureRenderer  执行的返回值
+  // {
+  //   render,
+  //   hydrate,
+  //   createApp: createAppAPI(render, hydrate)
+  // }
+
+  // createApp  接收 根组件和根组件props  props 不是对象  会置为null
   const app = ensureRenderer().createApp(...args)
 
   if (__DEV__) {
@@ -58,17 +73,25 @@ export const createApp = ((...args) => {
   }
 
   const { mount } = app
+  // 重写了mount
   app.mount = (containerOrSelector: Element | string): any => {
+    // 如果是字符串,尝试通过选择器获取,否则 直接返回
     const container = normalizeContainer(containerOrSelector)
+    // 如果没有传递 挂载节点,. 就是什么都没做?????
     if (!container) return
     const component = app._component
+    //isFunction===> typeof val === 'function'
+    // 如果不是函数,也没有render  和template   就使用innerHtml作为模板
     if (!isFunction(component) && !component.render && !component.template) {
       component.template = container.innerHTML
     }
     // clear content before mounting
+    // 先清空原节点内容
     container.innerHTML = ''
     const proxy = mount(container)
+    // 在挂载完成之后,只移除了根节点的v-cloak
     container.removeAttribute('v-cloak')
+    // data-v-app   在根节点上设置了这个
     container.setAttribute('data-v-app', '')
     return proxy
   }

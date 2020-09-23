@@ -9,15 +9,19 @@ if (!process.env.TARGET) {
 
 const masterVersion = require('./package.json').version
 const packagesDir = path.resolve(__dirname, 'packages')
+// package 的
 const packageDir = path.resolve(packagesDir, process.env.TARGET)
+//   \vue-next\packages\vue    把报路径指向了packages
+console.log('packageDir------------', packageDir)
 const name = path.basename(packageDir)
+console.log('basename---------------', name)
 const resolve = p => path.resolve(packageDir, p)
 const pkg = require(resolve(`package.json`))
 const packageOptions = pkg.buildOptions || {}
 
 // ensure TS checks only once for each build
 let hasTSChecked = false
-
+//  在每一个模块下进行单独打包，比如 runtime-core  打包到对应的runtime-core/dist
 const outputConfigs = {
   'esm-bundler': {
     file: resolve(`dist/${name}.esm-bundler.js`),

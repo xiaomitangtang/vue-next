@@ -398,11 +398,17 @@ function baseCreateRenderer(
 ): HydrationRenderer
 
 // implementation
+// 最中外部调用
+// function ensureRenderer() {
+//   return renderer || (renderer = createRenderer<Node, Element>(rendererOptions))
+// }   的实现
 function baseCreateRenderer(
   options: RendererOptions,
+  // 是否是服务端渲染,,, 会导致hydrate  是否生成
   createHydrationFns?: typeof createHydrationFunctions
 ): any {
   // compile-time feature flags check
+  // 根据环境变量,在全局上设置一些 变量标志,,,应该是各种log  devtool用到的
   if (__ESM_BUNDLER__ && !__TEST__) {
     initFeatureFlags()
   }
@@ -2193,13 +2199,17 @@ function baseCreateRenderer(
 
   const render: RootRenderFunction = (vnode, container) => {
     if (vnode == null) {
+      // 如果不存在newVnode  说明需要卸载
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
       }
     } else {
+      // 如果都存在,   进行diff
       patch(container._vnode || null, vnode, container)
     }
+    // 对比完之后进行了任务调用...
     flushPostFlushCbs()
+    // 更新 oldVnode
     container._vnode = vnode
   }
 

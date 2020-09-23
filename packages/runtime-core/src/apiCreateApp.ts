@@ -89,7 +89,7 @@ export function createAppContext(): AppContext {
   return {
     app: null as any,
     config: {
-      isNativeTag: NO,
+      isNativeTag: NO, // 一个函数  返回 false
       performance: false,
       globalProperties: {},
       optionMergeStrategies: {},
@@ -115,6 +115,7 @@ export function createAppAPI<HostElement>(
   render: RootRenderFunction,
   hydrate?: RootHydrateFunction
 ): CreateAppFunction<HostElement> {
+  // 所以外部的createApp   接收两个参数  一个根组件  一个根组件的props
   return function createApp(rootComponent, rootProps = null) {
     if (rootProps != null && !isObject(rootProps)) {
       __DEV__ && warn(`root props passed to app.mount() must be an object.`)
@@ -122,6 +123,22 @@ export function createAppAPI<HostElement>(
     }
 
     const context = createAppContext()
+    // {
+    //   app: null as any,
+    //   config: {
+    //     isNativeTag: NO, // 一个函数  返回 false
+    //     performance: false,
+    //     globalProperties: {},
+    //     optionMergeStrategies: {},
+    //     isCustomElement: NO,
+    //     errorHandler: undefined,
+    //     warnHandler: undefined
+    //   },
+    //   mixins: [],
+    //   components: {},
+    //   directives: {},
+    //   provides: Object.create(null)
+    // }
     const installedPlugins = new Set()
 
     let isMounted = false
@@ -146,7 +163,9 @@ export function createAppAPI<HostElement>(
           )
         }
       },
-
+      // app  的  use  后面传递的是 app实例和option了  不在是vue
+      // 其余逻辑和以前一样，加载过不在加载，  是函数直接执行，有install  会执行install
+      // 就是是一个函数  但是函数有一个属性install  也是函数  会去执行install
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
@@ -164,7 +183,7 @@ export function createAppAPI<HostElement>(
         }
         return app
       },
-
+      // 把混入的 加入到实例的 mixins数组中
       mixin(mixin: ComponentOptions) {
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
@@ -180,7 +199,7 @@ export function createAppAPI<HostElement>(
         }
         return app
       },
-
+      // 把 组件加入到 app 的components={}上
       component(name: string, component?: Component): any {
         if (__DEV__) {
           validateComponentName(name, context.config)
@@ -212,6 +231,7 @@ export function createAppAPI<HostElement>(
 
       mount(rootContainer: HostElement, isHydrate?: boolean): any {
         if (!isMounted) {
+          // 这俩参数就是外部传递进来的
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps
