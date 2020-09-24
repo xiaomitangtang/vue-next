@@ -161,6 +161,7 @@ function createReactiveObject(
   }
   // only a whitelist of value types can be observed.
   const targetType = getTargetType(target)
+  // 如果是 不可扩展  就是invalid
   if (targetType === TargetType.INVALID) {
     return target
   }

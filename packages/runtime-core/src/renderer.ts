@@ -450,7 +450,7 @@ function baseCreateRenderer(
       unmount(n1, parentComponent, parentSuspense, true)
       n1 = null
     }
-                      // -2  这个类型没有动态children
+    // -2  这个类型没有动态children
     if (n2.patchFlag === PatchFlags.BAIL) {
       optimized = false
       n2.dynamicChildren = null
@@ -909,6 +909,7 @@ function baseCreateRenderer(
       // (i.e. at the exact same position in the source template)
       if (patchFlag & PatchFlags.FULL_PROPS) {
         // element props contain dynamic keys, full diff needed
+        // 给组件传递的props 有动态值
         patchProps(
           el,
           n2,
@@ -988,6 +989,7 @@ function baseCreateRenderer(
 
     const areChildrenSVG = isSVG && n2.type !== 'foreignObject'
     if (dynamicChildren) {
+      // 直接进行循环比对。。。。
       patchBlockChildren(
         n1.dynamicChildren!,
         dynamicChildren,
@@ -1000,6 +1002,7 @@ function baseCreateRenderer(
         traverseStaticChildren(n1, n2)
       }
     } else if (!optimized) {
+      //  optimized  优化，，，没有经过优化 就全量diff
       // full diff
       patchChildren(
         n1,
@@ -1223,7 +1226,9 @@ function baseCreateRenderer(
       updateComponent(n1, n2, optimized)
     }
   }
-
+  console.log({
+    kkk: __FEATURE_SUSPENSE__
+  })
   const mountComponent: MountComponentFn = (
     initialVNode,
     container,
@@ -1264,12 +1269,13 @@ function baseCreateRenderer(
 
     // setup() is async. This component relies on async logic to be resolved
     // before proceeding
+    // __FEATURE_SUSPENSE__  shi true
     if (__FEATURE_SUSPENSE__ && instance.asyncDep) {
       if (!parentSuspense) {
         if (__DEV__) warn('async setup() is used without a suspense boundary!')
         return
       }
-
+      // defineAsyncComponent  会注册  在loader返回结果时   进一步调用
       parentSuspense.registerDep(instance, setupRenderEffect)
 
       // Give it a placeholder if this is not hydration
@@ -1341,8 +1347,11 @@ function baseCreateRenderer(
     optimized
   ) => {
     // create reactive effect for rendering
+    // 因为没有 传递lazy  所以立即会在effect中执行一次。会挂载    返回的是包装过的 effect函数
     instance.update = effect(function componentEffect() {
+      console.log('componentEffect')
       if (!instance.isMounted) {
+        //
         let vnodeHook: VNodeHook | null | undefined
         const { el, props } = initialVNode
         const { bm, m, parent } = instance
@@ -1558,6 +1567,7 @@ function baseCreateRenderer(
         )
         return
       } else if (patchFlag & PatchFlags.UNKEYED_FRAGMENT) {
+        // 逐个对比，后面的舍弃
         // unkeyed
         patchUnkeyedChildren(
           c1 as VNode[],
@@ -1691,6 +1701,7 @@ function baseCreateRenderer(
     // 1. sync from start
     // (a b) c
     // (a b) d e
+    // 如果头相同，直接比对， 否则退出循环
     while (i <= e1 && i <= e2) {
       const n1 = c1[i]
       const n2 = (c2[i] = optimized
@@ -1716,6 +1727,7 @@ function baseCreateRenderer(
     // 2. sync from end
     // a (b c)
     // d e (b c)
+    // 如果尾相同  比对，否则跳出
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1]
       const n2 = (c2[e2] = optimized
@@ -1746,6 +1758,7 @@ function baseCreateRenderer(
     // (a b)
     // c (a b)
     // i = 0, e1 = -1, e2 = 0
+    // 如果头或者为比对完  第二组多一些
     if (i > e1) {
       if (i <= e2) {
         const nextPos = e2 + 1
@@ -1775,6 +1788,7 @@ function baseCreateRenderer(
     // (b c)
     // i = 0, e1 = 0, e2 = -1
     else if (i > e2) {
+      // 比对完之后  第一组多  old多了 就卸载
       while (i <= e1) {
         unmount(c1[i], parentComponent, parentSuspense, true)
         i++
@@ -1786,10 +1800,12 @@ function baseCreateRenderer(
     // [i ... e2 + 1]: a b [e d c h] f g
     // i = 2, e1 = 4, e2 = 5
     else {
+      // 比对完之后剩下一些不满足优化 的乱序。。。。完全比对
       const s1 = i // prev starting index
       const s2 = i // next starting index
 
       // 5.1 build key:index map for newChildren
+      // 存储新节点的位置
       const keyToNewIndexMap: Map<string | number, number> = new Map()
       for (i = s2; i <= e2; i++) {
         const nextChild = (c2[i] = optimized
@@ -1811,6 +1827,7 @@ function baseCreateRenderer(
       // matching nodes & remove nodes that are no longer present
       let j
       let patched = 0
+      // 需要比对的节点的个数
       const toBePatched = e2 - s2 + 1
       let moved = false
       // used to track whether any node has moved
@@ -1826,6 +1843,7 @@ function baseCreateRenderer(
       for (i = s1; i <= e1; i++) {
         const prevChild = c1[i]
         if (patched >= toBePatched) {
+          // 如果  新节点已经比对完了，还有老节点  卸载
           // all new children have been patched so this can only be a removal
           unmount(prevChild, parentComponent, parentSuspense, true)
           continue
@@ -1846,6 +1864,7 @@ function baseCreateRenderer(
           }
         }
         if (newIndex === undefined) {
+          // 如果旧节点在新节点中没有找到对应的位置  卸载
           unmount(prevChild, parentComponent, parentSuspense, true)
         } else {
           newIndexToOldIndexMap[newIndex - s2] = i + 1

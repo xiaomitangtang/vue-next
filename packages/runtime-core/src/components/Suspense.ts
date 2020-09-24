@@ -420,6 +420,7 @@ function createSuspenseBoundary(
         .then(asyncSetupResult => {
           // retry when the setup() promise resolves.
           // component may have been unmounted before resolve.
+          // 如果组件已经卸载了，，，不管了
           if (instance.isUnmounted || suspense.isUnmounted) {
             return
           }

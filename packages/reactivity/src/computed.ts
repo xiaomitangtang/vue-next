@@ -48,6 +48,7 @@ class ComputedRefImpl<T> {
   }
 
   get value() {
+    // 获取value的时候检查是否dirty  表示依赖项是否已经改变，改变了  就重新计算，没改变 返回原值
     if (this._dirty) {
       this._value = this.effect()
       this._dirty = false
