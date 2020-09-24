@@ -455,10 +455,8 @@ export function createComponentInstance(
   if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
     devtoolsComponentAdded(instance)
   }
-
   return instance
 }
-
 export let currentInstance: ComponentInternalInstance | null = null
 
 export const getCurrentInstance: () => ComponentInternalInstance | null = () =>

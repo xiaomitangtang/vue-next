@@ -411,9 +411,11 @@ export function applyOptions(
   // applyOptions is called non-as-mixin once per instance
   if (!asMixin) {
     isInBeforeCreate = true
+    // 执行顺序  globalMinx   extends   mixins  自己的对应钩子   全都是递归深层执行
     callSyncHook('beforeCreate', options, publicThis, globalMixins)
     isInBeforeCreate = false
     // global mixins are applied first
+    // 这个里面 会继续调用  applyOptions  但是  asMixin=true
     applyMixins(instance, globalMixins, deferredData, deferredWatch)
   }
 
@@ -436,7 +438,7 @@ export function applyOptions(
       }
     }
   }
-
+  // 上面十几行代码 保证所有的extend  mixins  包括gloabal上对应的  全部都会被执行   下面的才是真实的逻辑
   // options initialization order (to be consistent with Vue 2):
   // - props (already done outside of this function)
   // - inject
@@ -445,10 +447,14 @@ export function applyOptions(
   // - computed
   // - watch (deferred since it relies on `this` access)
 
+  // injectOptions  可以是对象  也可以是数组  数组无法设置默认值，对象的话  可以有from  defaule两个
+  // {key:"aaa"} ==={key:{from:"aaa"}}
   if (injectOptions) {
     if (isArray(injectOptions)) {
       for (let i = 0; i < injectOptions.length; i++) {
         const key = injectOptions[i]
+        // 从provides 里面去查找  没有就返回 defauleValue  在没有就报警告
+        // ctx本身就是一个代理对象，设置之后会触发相应函数更新
         ctx[key] = inject(key)
         if (__DEV__) {
           checkDuplicateProperties!(OptionTypes.INJECT, key)
@@ -515,6 +521,12 @@ export function applyOptions(
   if (computedOptions) {
     for (const key in computedOptions) {
       const opt = (computedOptions as ComputedOptions)[key]
+      // computed 上下文是this   第一个参数绑定为了this  提供给箭头函数使用
+      // 可以直接是一个函数，也可以是一个对象提供一个 get属性作为函数，
+      // 在没有就是空  没有任何效果 会报警告
+
+      // 如果提供set  那么上下文是this  没有默认参数
+
       const get = isFunction(opt)
         ? opt.bind(publicThis, publicThis)
         : isFunction(opt.get)
@@ -533,6 +545,8 @@ export function applyOptions(
                 )
               }
             : NOOP
+      // 不管有没有提供set   最终会转成  computed检测的代理对象，然后通过Obj.defined  定义到 this上
+
       const c = computed({
         get,
         set
@@ -548,7 +562,7 @@ export function applyOptions(
       }
     }
   }
-
+  // {a(){},b:{hanlder}}
   if (watchOptions) {
     deferredWatch.push(watchOptions)
   }
@@ -596,6 +610,7 @@ export function applyOptions(
   }
 
   // lifecycle options
+  // options的生命周期  也是调用的onXXX的形式
   if (!asMixin) {
     callSyncHook('created', options, publicThis, globalMixins)
   }
@@ -640,8 +655,10 @@ function callSyncHook(
   ctx: ComponentPublicInstance,
   globalMixins: ComponentOptions[]
 ) {
+  // 进行了一个递归调用，考虑到 每一个mixins  都是一个vueOption  可以有自己的mixins
+  // 最终结果就是执行了所有的   'beforeCreate' | 'created',钩子函数
   callHookFromMixins(name, globalMixins, ctx)
-
+  // 先执行  global的  然后在处理自己的
   const { extends: base, mixins } = options
   if (base) {
     callHookFromExtends(name, base, ctx)
@@ -668,7 +685,7 @@ function callHookFromExtends(
     baseHook.call(ctx)
   }
 }
-
+// [{minins},{}...]
 function callHookFromMixins(
   name: 'beforeCreate' | 'created',
   mixins: ComponentOptions[],
@@ -734,6 +751,9 @@ function createWatcher(
 ) {
   const getter = () => (publicThis as any)[key]
   if (isString(raw)) {
+    // 如果是字符串，会去this上找对应属性，该属性是function  就会作为watcher
+    // getter  就是 返回代理 this上的对应属性
+    //
     const handler = ctx[raw]
     if (isFunction(handler)) {
       watch(getter, handler as WatchCallback)
